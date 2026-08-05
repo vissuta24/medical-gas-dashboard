@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ระบบสต๊อกท่อก๊าซทางการแพทย์ (Online)</title>
+<style>
+  :root{
+    --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#eef4ff; --card:#ffffff;
+    --border:#e2e8f0; --text:#1e293b; --muted:#64748b;
+    --o06:#3b82f6; --o7:#10b981; --n7:#8b5cf6; --co2:#ef4444;
+    --wait:#f59e0b; --send:#06b6d4; --recv:#22c55e; --bill:#7c3aed;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:"Segoe UI",Tahoma,"Sarabun",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:env(safe-area-inset-bottom);}
+  header{background:linear-gradient(90deg,var(--primary),#7c3aed);color:#fff;padding:16px 20px;padding-top:calc(16px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);position:sticky;top:0;z-index:20;}
+  header h1{font-size:1.2rem;display:flex;align-items:center;gap:8px;}
+  .conn{font-size:.72rem;padding:5px 11px;border-radius:20px;background:rgba(255,255,255,.2);display:flex;align-items:center;gap:6px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:#facc15;}
+  .dot.ok{background:#4ade80;} .dot.err{background:#f87171;}
+  .container{max-width:1200px;margin:16px auto;padding:0 14px;}
+
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+  .kpi{background:var(--card);border-radius:14px;padding:14px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:4px solid #ccc;}
+  .kpi .lbl{font-size:.8rem;color:var(--muted);margin-bottom:4px;font-weight:600;}
+  .kpi .num{font-size:1.7rem;font-weight:800;font-variant-numeric:tabular-nums;}
+  .kpi .unit{font-size:.72rem;color:var(--muted);}
+  .kpi.o06{border-color:var(--o06);} .kpi.o7{border-color:var(--o7);} .kpi.n7{border-color:var(--n7);} .kpi.co2{border-color:var(--co2);}
+  .kpi.wait{border-color:var(--wait);} .kpi.send{border-color:var(--send);} .kpi.recv{border-color:var(--recv);} .kpi.bill{border-color:var(--bill);}
+
+  .card{background:var(--card);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px;margin-bottom:14px;}
+  .card h2{font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .field{flex:1;min-width:130px;}
+  .field label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:5px;}
+  .field input,.field select{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:9px;font-size:16px;font-family:inherit;background:#fff;}
+  .btn{background:var(--primary);color:#fff;border:none;padding:12px 20px;border-radius:9px;cursor:pointer;font-size:.92rem;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .btn:hover{background:var(--primary-dark);} .btn:active{transform:scale(.97);}
+  .btn.small{padding:7px 11px;font-size:.8rem;}
+  .btn.ghost{background:#f1f5f9;color:var(--text);}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .search{flex:1;min-width:160px;padding:11px 14px;border:1px solid var(--border);border-radius:9px;font-size:.95rem;}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:820px;}
+  th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+  th{background:#f8fafc;font-weight:700;color:var(--muted);font-size:.72rem;white-space:nowrap;}
+  td.left{text-align:left;}
+  tr:hover td{background:#f8fafc;}
+  .qty-cell{cursor:pointer;border-radius:6px;padding:6px 8px;font-weight:700;min-width:44px;display:inline-block;}
+  .qty-cell:hover{background:#e0edff;outline:2px solid var(--primary);}
+  .q-wait{color:var(--wait);} .q-send{color:var(--send);} .q-recv{color:var(--recv);} .q-bill{color:var(--bill);}
+  .gas-tag{padding:3px 9px;border-radius:20px;color:#fff;font-size:.72rem;font-weight:700;white-space:nowrap;}
+  .g-o06{background:var(--o06);} .g-o7{background:var(--o7);} .g-n7{background:var(--n7);} .g-co2{background:var(--co2);}
+  .remain{font-weight:800;font-variant-numeric:tabular-nums;}
+  .img-cell{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .thumb{width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;}
+  .cam-btn{background:#f1f5f9;border:1px solid var(--border);border-radius:7px;padding:5px 8px;cursor:pointer;font-size:.85rem;}
+  .cam-btn:hover{background:#e0edff;}
+  .del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;}
+  .empty{text-align:center;padding:40px;color:var(--muted);}
+
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:96%;max-height:96%;border-radius:8px;}
+  .lightbox .close{position:absolute;top:14px;right:20px;color:#fff;font-size:2rem;cursor:pointer;background:none;border:none;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:#1e293b;color:#fff;padding:12px 22px;border-radius:10px;font-size:.88rem;z-index:200;transition:.3s;opacity:0;max-width:90%;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+  .setup{background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:.86rem;color:#713f12;}
+  .setup code{background:#fff7d6;padding:1px 5px;border-radius:4px;}
+  @media(max-width:640px){
+    .grid4{grid-template-columns:repeat(2,1fr);}
+    header h1{font-size:1.05rem;}
+    .kpi .num{font-size:1.4rem;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏥 ระบบสต๊อกท่อก๊าซทางการแพทย์</h1>
+  <div class="conn"><span class="dot" id="connDot"></span><span id="connText">กำลังเชื่อมต่อ...</span></div>
+</header>
+
+<div class="container">
+
+  <div class="setup" id="setupNotice" style="display:none">
+    ⚙️ <b>ยังไม่ได้ตั้งค่า Supabase</b> — ใส่ <code>SUPABASE_URL</code> และ <code>SUPABASE_KEY</code>
+  </div>
+
+  <div class="grid4">
+    <div class="kpi o06"><div class="lbl">🔵 Oxygen 0.6 คิว</div><div class="num" id="o06">0</div><div class="unit">ท่อ คงเหลือ</div></div>
+    <div class="kpi o7"><div class="lbl">🟢 Oxygen 7 คิว</div><div class="num" id="o7">0</div><div class="unit">ท่อ คงเหลือ</div></div>
+    <div class="kpi n7"><div class="lbl">🟣 Nitrogen 7 คิว</div><div class="num" id="n7">0</div><div class="unit">ท่อ คงเหลือ</div></div>
+    <div class="kpi co2"><div class="lbl">🔴 CO₂ 0.5 คิว</div><div class="num" id="co2">0</div><div class="unit">ท่อ คงเหลือ</div></div>
+  </div>
+
+  <div class="grid4">
+    <div class="kpi wait"><div class="lbl">🟡 รอส่ง</div><div class="num" id="kWait">0</div><div class="unit">ท่อ</div></div>
+    <div class="kpi send"><div class="lbl">🚚 ส่งแล้ว</div><div class="num" id="kSend">0</div><div class="unit">ท่อ</div></div>
+    <div class="kpi recv"><div class="lbl">📥 รับแล้ว</div><div class="num" id="kRecv">0</div><div class="unit">ท่อ</div></div>
+    <div class="kpi bill"><div class="lbl">🧾 วางบิลแล้ว</div><div class="num" id="kBill">0</div><div class="unit">ท่อ</div></div>
+  </div>
+
+  <div class="card">
+    <h2>➕ เพิ่มคำสั่งซื้อ (PO)</h2>
+    <div class="form-row">
+      <div class="field"><label>เลขที่ PO</label><input id="f_po" placeholder="เช่น PO0001"></div>
+      <div class="field"><label>ประเภทท่อ</label>
+        <select id="f_type">
+          <option value="O2 0.6Q">🔵 Oxygen 0.6 คิว</option>
+          <option value="O2 7Q">🟢 Oxygen 7 คิว</option>
+          <option value="N2 7Q">🟣 Nitrogen 7 คิว</option>
+          <option value="CO2 0.5Q">🔴 CO₂ 0.5 คิว</option>
+        </select>
+      </div>
+      <div class="field"><label>จำนวน PO (ท่อ)</label><input id="f_qty" type="number" inputmode="numeric" placeholder="0"></div>
+      <button class="btn" onclick="addPO()">➕ บันทึก PO</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">📋 รายการ PO ทั้งหมด</h2>
+      <input class="search" id="search" placeholder="🔍 ค้นหา PO / ประเภท ..." oninput="render()">
+      <button class="btn ghost small" onclick="loadData()">🔄 รีเฟรช</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PO</th><th>ประเภท</th><th>จำนวน PO</th>
+            <th>🟡 รอส่ง</th><th>🚚 ส่ง</th><th>📥 รับ</th><th>🧾 วางบิล</th><th>คงเหลือ</th>
+            <th>🚚 รูปส่ง</th><th>📥 รูปรับ</th><th>🧾 รูปบิล</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" style="display:none">ยังไม่มีข้อมูล — เพิ่ม PO แรกด้านบนได้เลย</div>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:.78rem;margin:10px">
+    💡 แตะที่ตัวเลข <b>รอส่ง / ส่ง / รับ / วางบิล</b> เพื่อแก้ไขจำนวน • ข้อมูลซิงก์อัตโนมัติแบบ Real-time ทุกเครื่อง
+  </p>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <button class="close">✕</button><img id="lightboxImg" src="" alt="">
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ==========================================================
+   ✅ ตั้งค่า Supabase ของคุณเรียบร้อยแล้ว (ไม่ต้องแก้อะไร)
+   ========================================================== */
+const SUPABASE_URL = 'https://pxflhqxbkboomboalxhg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zVDZZrBFlOUmG1KFh8adHA_WWtIA93e';
+const BUCKET       = 'gas-images';
+/* ========================================================== */
+
+const GAS_LABEL = {'O2 0.6Q':'🔵 Oxygen 0.6 คิว','O2 7Q':'🟢 Oxygen 7 คิว','N2 7Q':'🟣 Nitrogen 7 คิว','CO2 0.5Q':'🔴 CO₂ 0.5 คิว'};
+const GAS_CLASS = {'O2 0.6Q':'g-o06','O2 7Q':'g-o7','N2 7Q':'g-n7','CO2 0.5Q':'g-co2'};
+const $ = id => document.getElementById(id);
+let sb = null, rows = [];
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+function setConn(state,text){const d=$('connDot');d.className='dot'+(state==='ok'?' ok':state==='err'?' err':'');$('connText').textContent=text;}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function init(){
+  if(SUPABASE_URL.includes('YOUR_PROJECT') || SUPABASE_KEY.includes('YOUR_ANON')){
+    $('setupNotice').style.display='block'; setConn('err','ยังไม่ตั้งค่า'); return;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  loadData(); subscribeRealtime();
+}
+
+async function loadData(){
+  if(!sb)return;
+  setConn('','กำลังโหลด...');
+  const { data, error } = await sb.from('gas_po').select('*').order('id',{ascending:false});
+  if(error){ setConn('err','เชื่อมต่อไม่สำเร็จ'); toast('⚠️ '+error.message); console.error(error); return; }
+  rows = data || [];
+  setConn('ok','ออนไลน์ • '+rows.length+' รายการ');
+  render();
+}
+
+function subscribeRealtime(){
+  sb.channel('gas-stock')
+    .on('postgres_changes',{event:'*',schema:'public',table:'gas_po'},()=>loadData())
+    .subscribe(status=>{ if(status==='SUBSCRIBED') setConn('ok','ออนไลน์ (Real-time)'); });
+}
+
+async function addPO(){
+  if(!sb){toast('⚠️ ยังไม่ตั้งค่า Supabase');return;}
+  const po=$('f_po').value.trim(), type=$('f_type').value, qty=parseInt($('f_qty').value)||0;
+  if(!po){toast('⚠️ กรุณากรอกเลขที่ PO');return;}
+  if(qty<=0){toast('⚠️ กรุณากรอกจำนวน PO');return;}
+  const { error } = await sb.from('gas_po').insert([{
+    po_no:po, gas_type:type, qty_po:qty, qty_wait:qty, qty_send:0, qty_receive:0, qty_bill:0
+  }]);
+  if(error){toast('⚠️ '+error.message);console.error(error);return;}
+  $('f_po').value='';$('f_qty').value='';
+  toast('✅ เพิ่ม PO เรียบร้อย');
+  loadData();
+}
+
+async function editQty(id, field, label){
+  const r=rows.find(x=>x.id===id);if(!r)return;
+  const v=prompt(`จำนวน "${label}" (ท่อ) สำหรับ ${r.po_no}\n[จำนวน PO = ${r.qty_po} ท่อ]`, r[field]||0);
+  if(v===null)return;
+  const n=parseInt(v);
+  if(isNaN(n)||n<0){toast('⚠️ กรุณากรอกตัวเลขที่ถูกต้อง');return;}
+  const { error } = await sb.from('gas_po').update({[field]:n}).eq('id',id);
+  if(error){toast('⚠️ '+error.message);return;}
+  toast('✅ อัปเดตแล้ว'); loadData();
+}
+
+function pickImage(id, field){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';inp.capture='environment';
+  inp.onchange=e=>{ const file=e.target.files[0]; if(file) uploadImage(id,field,file); };
+  inp.click();
+}
+async function uploadImage(id, field, file){
+  toast('⏳ กำลังอัปโหลดรูป...');
+  try{
+    const blob = await compress(file);
+    const fileName = `${id}_${field}_${Date.now()}.jpg`;
+    const { error:upErr } = await sb.storage.from(BUCKET).upload(fileName, blob, {contentType:'image/jpeg',upsert:true});
+    if(upErr) throw upErr;
+    const { data:pub } = sb.storage.from(BUCKET).getPublicUrl(fileName);
+    const { error:dbErr } = await sb.from('gas_po').update({[field]:pub.publicUrl}).eq('id',id);
+    if(dbErr) throw dbErr;
+    toast('✅ แนบรูปเรียบร้อย'); loadData();
+  }catch(err){ toast('⚠️ '+(err.message||'อัปโหลดไม่สำเร็จ')); console.error(err); }
+}
+function compress(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1200;let{width:w,height:h}=img;
+        if(w>max||h>max){const k=Math.min(max/w,max/h);w*=k;h*=k;}
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        c.toBlob(b=>res(b),'image/jpeg',0.8);
+      };
+      img.onerror=rej;img.src=e.target.result;
+    };
+    r.onerror=rej;r.readAsDataURL(file);
+  });
+}
+
+async function delPO(id){
+  const r=rows.find(x=>x.id===id);if(!r)return;
+  if(!confirm(`ต้องการลบ PO "${r.po_no}" ใช่หรือไม่?`))return;
+  const { error } = await sb.from('gas_po').delete().eq('id',id);
+  if(error){toast('⚠️ '+error.message);return;}
+  toast('🗑️ ลบเรียบร้อย'); loadData();
+}
+
+function imgCell(r, field){
+  const url=r[field];
+  const thumb = url ? `<img class="thumb" src="${url}" onclick="showImg('${url}')">` : '';
+  return `<div class="img-cell">${thumb}<button class="cam-btn" onclick="pickImage(${r.id},'${field}')">📷</button></div>`;
+}
+function showImg(src){$('lightboxImg').src=src;$('lightbox').classList.add('open');}
+
+function render(){
+  const q=$('search').value.toLowerCase().trim();
+  const list=rows.filter(r=>!q || `${r.po_no} ${r.gas_type}`.toLowerCase().includes(q));
+  const tb=$('tbody');tb.innerHTML='';
+  $('empty').style.display=list.length?'none':'block';
+  list.forEach(r=>{
+    const remain=(r.qty_po||0)-(r.qty_bill||0);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="left"><b>${esc(r.po_no)}</b></td>
+      <td><span class="gas-tag ${GAS_CLASS[r.gas_type]||''}">${esc(r.gas_type)}</span></td>
+      <td><b>${r.qty_po||0}</b></td>
+      <td><span class="qty-cell q-wait" onclick="editQty(${r.id},'qty_wait','รอส่ง')">${r.qty_wait||0}</span></td>
+      <td><span class="qty-cell q-send" onclick="editQty(${r.id},'qty_send','ส่งแล้ว')">${r.qty_send||0}</span></td>
+      <td><span class="qty-cell q-recv" onclick="editQty(${r.id},'qty_receive','รับแล้ว')">${r.qty_receive||0}</span></td>
+      <td><span class="qty-cell q-bill" onclick="editQty(${r.id},'qty_bill','วางบิล')">${r.qty_bill||0}</span></td>
+      <td class="remain">${remain}</td>
+      <td>${imgCell(r,'send_image')}</td>
+      <td>${imgCell(r,'receive_image')}</td>
+      <td>${imgCell(r,'bill_image')}</td>
+      <td><button class="del" onclick="delPO(${r.id})">🗑️</button></td>`;
+    tb.appendChild(tr);
+  });
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const stock={'O2 0.6Q':0,'O2 7Q':0,'N2 7Q':0,'CO2 0.5Q':0};
+  let w=0,s=0,rc=0,b=0;
+  rows.forEach(r=>{
+    if(stock[r.gas_type]!==undefined) stock[r.gas_type]+=(r.qty_po||0)-(r.qty_bill||0);
+    w+=r.qty_wait||0; s+=r.qty_send||0; rc+=r.qty_receive||0; b+=r.qty_bill||0;
+  });
+  $('o06').textContent=stock['O2 0.6Q'];
+  $('o7').textContent=stock['O2 7Q'];
+  $('n7').textContent=stock['N2 7Q'];
+  $('co2').textContent=stock['CO2 0.5Q'];
+  $('kWait').textContent=w; $('kSend').textContent=s; $('kRecv').textContent=rc; $('kBill').textContent=b;
+}
+
+init();
+</script>
+</body>
+</html>
